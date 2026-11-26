@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1769e0">
+<title>FIVE STAR TV</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f3f7ff;color:#17243a;font-family:Arial,sans-serif}
+header{background:#1769e0;color:white;padding:20px;text-align:center}
+header h1{margin:0;font-size:25px;letter-spacing:1px}
+header p{margin:7px 0 0;font-size:13px}
+main{max-width:850px;margin:28px auto;padding:16px}
+.panel{background:white;border-radius:14px;padding:22px;box-shadow:0 4px 18px #173d7012;margin-bottom:18px}
+h2{font-size:19px;margin:0 0 15px;color:#1769e0}
+input{width:100%;padding:14px;border:1px solid #ccd8e8;border-radius:9px;font-size:16px;margin:5px 0 12px}
+button{width:100%;padding:14px;border:0;border-radius:9px;background:#1769e0;color:white;font-size:16px;font-weight:bold}
+button:disabled{opacity:.6}
+#message{font-size:14px;margin-top:12px;color:#d33}
+#player{width:100%;aspect-ratio:16/9;background:#101827;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#dce8ff;text-align:center;padding:15px}
+#videoList{display:grid;gap:10px}
+.video-item{padding:14px;border:1px solid #e1e9f5;border-radius:9px;background:#fff}
+.small{font-size:13px;color:#718096}
+footer{text-align:center;color:#718096;font-size:12px;padding:20px}
+</style>
+</head>
+<body>
+<header>
+<h1>FIVE STAR TV</h1>
+<p>သင့်အတွက် ဖျော်ဖြေရေးကမ္ဘာ</p>
+</header>
+
+<main>
+<section class="panel" id="loginPanel">
+<h2>အသင်းဝင် Login</h2>
+<p class="small">Admin ထံမှ ရရှိထားသော Access Code ကို ထည့်သွင်းပါ။</p>
+<input id="accessCode" type="password" placeholder="Access Code ထည့်ပါ" autocomplete="off">
+<button id="loginButton" type="button">ဝင်ရောက်မည်</button>
+<div id="message"></div>
+</section>
+
+<section class="panel" id="viewerPanel" hidden>
+<h2>ဗီဒီယိုကြည့်ရှုရန်</h2>
+<div id="player">ဗီဒီယိုကို ရွေးချယ်ပါ</div>
+<div id="videoList" style="margin-top:16px"></div>
+</section>
+</main>
+
+<footer>FIVE STAR TV</footer>
+
+<script>
+const SUPABASE_URL = "https://ojmwlnwcbesezvxuryjc.supabase.co";
+const message = document.getElementById("message");
+document.getElementById("loginButton").addEventListener("click", async () => {
+  const code = document.getElementById("accessCode").value.trim();
+  if (!code) {
+    message.textContent = "Access Code ထည့်ပေးပါ။";
+    return;
+  }
+  message.textContent = "စစ်ဆေးနေပါသည်။";
+  document.getElementById("loginButton").disabled = true;
+  try {
+    const response = await fetch(SUPABASE_URL + "/functions/v1/activate-code", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({code})
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "ဝင်ရောက်၍ မရပါ။");
+    message.textContent = "ဝင်ရောက်မှု အောင်မြင်ပါသည်။";
+  } catch (error) {
+    message.textContent = error.message || "ချိတ်ဆက်မှု မအောင်မြင်ပါ။";
+  } finally {
+    document.getElementById("loginButton").disabled = false;
+  }
+});
+</script>
+</body>
+</html>
