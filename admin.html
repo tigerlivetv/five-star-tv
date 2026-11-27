@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#1769e0">
+<title>FIVE STAR TV - Admin</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f2f6ff;color:#17243a;font-family:Arial,sans-serif}
+header{background:#1769e0;color:white;padding:20px;text-align:center}
+main{max-width:850px;margin:24px auto;padding:14px}
+.panel{background:white;border-radius:14px;padding:20px;margin-bottom:16px;box-shadow:0 4px 18px #173d7012}
+h2{font-size:19px;color:#1769e0;margin:0 0 15px}
+input,select{width:100%;padding:13px;border:1px solid #ccd8e8;border-radius:9px;font-size:16px;margin:6px 0 12px}
+button{padding:12px;border:0;border-radius:8px;background:#1769e0;color:white;font-size:15px;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.5}
+.secondary{background:#52647d}
+.danger{background:#c73535}
+#status{margin:12px 0;font-size:14px;white-space:pre-wrap}
+#newCode{font-size:19px;font-weight:bold;word-break:break-all;background:#edf3ff;padding:15px;border-radius:9px;margin:12px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td,th{padding:10px 6px;border-bottom:1px solid #e5ebf5;text-align:left}
+.tablewrap{overflow-x:auto}
+.small{font-size:13px;color:#718096}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header><h1>FIVE STAR TV</h1><p>ADMIN PANEL</p></header>
+<main>
+<section class="panel" id="loginPanel">
+<h2>Admin Login</h2>
+<input id="email" type="email" placeholder="Admin Email" autocomplete="username">
+<input id="password" type="password" placeholder="Password" autocomplete="current-password">
+<button id="loginBtn">Login ဝင်မည်</button>
+<div id="loginStatus" class="small"></div>
+</section>
+
+<div id="dashboard" hidden>
+<section class="panel">
+<h2>Access Code အသစ်ထုတ်ရန်</h2>
+<label>Package ရွေးပါ</label>
+<select id="months">
+<option value="1">၁ လ Package</option>
+<option value="2">၂ လ Package</option>
+<option value="3">၃ လ Package</option>
+</select>
+<button id="createBtn">Code ထုတ်မည်</button>
+<div id="newCode" hidden></div>
+<button id="copyBtn" class="secondary" hidden>Code Copy လုပ်မည်</button>
+<div id="status"></div>
+</section>
+
+<section class="panel">
+<h2>ထုတ်ထားသော Access Codes</h2>
+<button id="refreshBtn" class="secondary">စာရင်း ပြန်ဖွင့်မည်</button>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Package</th><th>ထုတ်သည့်ရက်</th><th>အခြေအနေ</th><th>လုပ်ဆောင်ချက်</th></tr></thead>
+<tbody id="codeRows"></tbody>
+</table>
+</div>
+<p class="small">လုံခြုံရေးအတွက် ယခင်ထုတ်ထားသော Code အပြည့်အစုံကို ပြန်မပြနိုင်ပါ။</p>
+</section>
+<button id="logoutBtn" class="secondary">Logout</button>
+</div>
+</main>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+const sb=createClient("https://ojmwlnwcbesezvxuryjc.supabase.co","sb_publishable_HdpdY2jPa_-Q1eDUq407JQ_HI7eC9qC");
+const fn="https://ojmwlnwcbesezvxuryjc.supabase.co/functions/v1/admin-codes";
+const $=id=>document.getElementById(id);
+let currentCode="";
+
+async function callApi(payload){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session) throw new Error("Admin Login ပြန်ဝင်ပါ။");
+  const r=await fetch(fn,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "apikey":"sb_publishable_HdpdY2jPa_-Q1eDUq407JQ_HI7eC9qC",
+      "Authorization":"Bearer "+session.access_token
+    },
+    body:JSON.stringify(payload)
+  });
+  const d=await r.json();
+  if(!r.ok) throw new Error(d.error||"လုပ်ဆောင်မှု မအောင်မြင်ပါ။");
+  return d;
+}
+function showStatus(s){$("status").textContent=s;}
+async function loadCodes(){
+  try{
+    const d=await callApi({action:"list"});
+    const tbody=$("codeRows");tbody.replaceChildren();
+    for(const c of d.codes){
+      const tr=document.createElement("tr");
+      const vals=[
+        c.plan_months+" လ",
+        new Date(c.created_at).toLocaleDateString(),
+        c.disabled_at?"ပိတ်ထားသည်":c.activated_at?"အသုံးပြုပြီး":"အသုံးမပြုရသေး"
+      ];
+      vals.forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});
+      const td=document.createElement("td");
+      if(!c.disabled_at){
+        const b=document.createElement("button");b.textContent="ပိတ်မည်";b.className="danger";
+        b.addEventListener("click",async()=>{
+          if(!confirm("ဒီ Access Code ကို ပိတ်မှာ သေချာပါသလား။"))return;
+          try{await callApi({action:"disable",id:c.id});await loadCodes();}
+          catch(e){showStatus(e.message);}
+        });
+        td.appendChild(b);
+      }else td.textContent="—";
+      tr.appendChild(td);tbody.appendChild(tr);
+    }
+    if(!d.codes.length){const tr=document.createElement("tr");const td=document.createElement("td");td.colSpan=4;td.textContent="Code မရှိသေးပါ။";tr.appendChild(td);tbody.appendChild(tr);}
+  }catch(e){showStatus(e.message);}
+}
+async function enterDashboard(){
+  $("loginPanel").hidden=true;$("dashboard").hidden=false;
+  await loadCodes();
+}
+$("loginBtn").onclick=async()=>{
+  $("loginStatus").textContent="စစ်ဆေးနေပါသည်။";
+  const {error}=await sb.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});
+  if(error){$("loginStatus").textContent=error.message;return;}
+  await enterDashboard();
+};
+$("createBtn").onclick=async()=>{
+  $("createBtn").disabled=true;showStatus("Code ထုတ်နေပါသည်။");
+  $("newCode").hidden=true;$("copyBtn").hidden=true;
+  try{
+    const d=await callApi({action:"create",plan_months:Number($("months").value)});
+    currentCode=d.code;$("newCode").textContent=currentCode;
+    $("newCode").hidden=false;$("copyBtn").hidden=false;
+    showStatus("Code အသစ် ထုတ်ပြီးပါပြီ။ Customer ကို ဒီ Code ပေးနိုင်ပါပြီ။");
+    await loadCodes();
+  }catch(e){showStatus(e.message);}
+  finally{$("createBtn").disabled=false;}
+};
+$("copyBtn").onclick=async()=>{
+  try{await navigator.clipboard.writeText(currentCode);showStatus("Code Copy လုပ်ပြီးပါပြီ။");}
+  catch(e){showStatus("Code ကို ဖိထားပြီး Copy လုပ်ပါ။");}
+};
+$("refreshBtn").onclick=loadCodes;
+$("logoutBtn").onclick=async()=>{await sb.auth.signOut();$("dashboard").hidden=true;$("loginPanel").hidden=false;};
+const {data:{session}}=await sb.auth.getSession();
+if(session) await enterDashboard();
+</script>
+</body>
+</html>

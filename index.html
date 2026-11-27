@@ -47,11 +47,17 @@ footer{text-align:center;color:#718096;font-size:12px;padding:20px}
 </section>
 </main>
 
-<footer>FIVE STAR TV</footer>
+<footer>FIVE STAR TV<p><a href="admin.html">Admin Panel</a></p></footer>
 
 <script>
 const SUPABASE_URL = "https://ojmwlnwcbesezvxuryjc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_HdpdY2jPa_-Q1eDUq407JQ_HI7eC9qC";
 const message = document.getElementById("message");
+let deviceId = localStorage.getItem("fiveStarDeviceId");
+if (!deviceId) {
+  deviceId = crypto.randomUUID();
+  localStorage.setItem("fiveStarDeviceId", deviceId);
+}
 document.getElementById("loginButton").addEventListener("click", async () => {
   const code = document.getElementById("accessCode").value.trim();
   if (!code) {
@@ -63,12 +69,14 @@ document.getElementById("loginButton").addEventListener("click", async () => {
   try {
     const response = await fetch(SUPABASE_URL + "/functions/v1/activate-code", {
       method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({code})
+      headers: {"Content-Type":"application/json", "apikey":SUPABASE_KEY},
+      body: JSON.stringify({code, deviceId})
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "ဝင်ရောက်၍ မရပါ။");
     message.textContent = "ဝင်ရောက်မှု အောင်မြင်ပါသည်။";
+    document.getElementById("loginPanel").hidden = true;
+    document.getElementById("viewerPanel").hidden = false;
   } catch (error) {
     message.textContent = error.message || "ချိတ်ဆက်မှု မအောင်မြင်ပါ။";
   } finally {
