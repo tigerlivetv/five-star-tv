@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
 
     if (action === "list") {
       const r = await fetch(
-        `${url}/rest/v1/access_codes?select=id,plan_months,created_at,activated_at,expires_at,disabled_at&order=created_at.desc&limit=100`,
+        `${url}/rest/v1/access_codes?select=id,buyer_name,code_value,plan_months,created_at,activated_at,expires_at,disabled_at&order=created_at.desc&limit=100`,
         { headers: dbHeaders },
       );
       const data = await r.json();
@@ -57,6 +57,10 @@ Deno.serve(async (req) => {
 
     if (action === "create") {
       const months = Number(body.plan_months);
+      const buyerName = String(body.buyer_name || "").trim();
+      if (!buyerName || buyerName.length > 100) {
+        return json({ error: "ဝယ်ယူသူအမည် မမှန်ပါ။" }, 400);
+      }
       if (![1, 2, 3].includes(months)) return json({ error: "Package မမှန်ပါ။" }, 400);
 
       const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -71,6 +75,8 @@ Deno.serve(async (req) => {
         headers: { ...dbHeaders, Prefer: "return=minimal" },
         body: JSON.stringify({
           code_hash: hash,
+          code_value: code,
+          buyer_name: buyerName,
           plan_months: months,
           created_by: user.id,
         }),
@@ -90,6 +96,21 @@ Deno.serve(async (req) => {
         },
       );
       if (!r.ok) return json({ error: "Code ပိတ်၍ မရပါ။" }, 500);
+      return json({ success: true });
+    }
+
+    if (action === "delete") {
+      if (typeof body.id !== "string") return json({ error: "Code ID မမှန်ပါ။" }, 400);
+      const r = await fetch(
+        `${url}/rest/v1/access_codes?id=eq.${encodeURIComponent(body.id)}`,
+        {
+          method: "DELETE",
+          headers: { ...dbHeaders, Prefer: "return=representation" },
+        },
+      );
+      if (!r.ok) return json({ error: "အပြီးဖျက်၍ မရပါ။ " + await r.text() }, 500);
+      const deleted = await r.json();
+      if (!deleted.length) return json({ error: "ဖျက်မည့် Code မတွေ့ပါ။" }, 404);
       return json({ success: true });
     }
 

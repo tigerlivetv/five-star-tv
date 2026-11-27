@@ -40,6 +40,8 @@ td,th{padding:10px 6px;border-bottom:1px solid #e5ebf5;text-align:left}
 <div id="dashboard" hidden>
 <section class="panel">
 <h2>Access Code အသစ်ထုတ်ရန်</h2>
+<label>ဝယ်ယူသူအမည်</label>
+<input id="buyerName" type="text" placeholder="ဝယ်ယူသူအမည် ရေးပါ" maxlength="100">
 <label>Package ရွေးပါ</label>
 <select id="months">
 <option value="1">၁ လ Package</option>
@@ -57,11 +59,11 @@ td,th{padding:10px 6px;border-bottom:1px solid #e5ebf5;text-align:left}
 <button id="refreshBtn" class="secondary">စာရင်း ပြန်ဖွင့်မည်</button>
 <div class="tablewrap">
 <table>
-<thead><tr><th>Package</th><th>ထုတ်သည့်ရက်</th><th>အခြေအနေ</th><th>လုပ်ဆောင်ချက်</th></tr></thead>
+<thead><tr><th>ဝယ်သူ</th><th>Access Code</th><th>Package</th><th>ထုတ်သည့်ရက်</th><th>အခြေအနေ</th><th>လုပ်ဆောင်ချက်</th></tr></thead>
 <tbody id="codeRows"></tbody>
 </table>
 </div>
-<p class="small">လုံခြုံရေးအတွက် ယခင်ထုတ်ထားသော Code အပြည့်အစုံကို ပြန်မပြနိုင်ပါ။</p>
+<p class="small">Code အသစ်များကို ပြန်ကြည့်ပြီး Copy လုပ်နိုင်ပါသည်။ ယခင် Code များမှာ ပြန်ဖော်မရပါ။</p>
 </section>
 <button id="logoutBtn" class="secondary">Logout</button>
 </div>
@@ -98,6 +100,8 @@ async function loadCodes(){
     for(const c of d.codes){
       const tr=document.createElement("tr");
       const vals=[
+        c.buyer_name || "အမည်မရှိ",
+        c.code_value || "ယခင် Code",
         c.plan_months+" လ",
         new Date(c.created_at).toLocaleDateString(),
         c.disabled_at?"ပိတ်ထားသည်":c.activated_at?"အသုံးပြုပြီး":"အသုံးမပြုရသေး"
@@ -112,10 +116,20 @@ async function loadCodes(){
           catch(e){showStatus(e.message);}
         });
         td.appendChild(b);
-      }else td.textContent="—";
+      }
+      const del=document.createElement("button");
+      del.textContent="အပြီးဖျက်မည်";
+      del.className="danger";
+      del.style.marginTop="6px";
+      del.addEventListener("click",async()=>{
+        if(!confirm("ဒီ Account နဲ့ Access Code ကို အပြီးဖျက်မှာ သေချာပါသလား။ ပြန်ယူလို့မရပါ။"))return;
+        try{await callApi({action:"delete",id:c.id});showStatus("အပြီးဖျက်ပြီးပါပြီ။");await loadCodes();}
+        catch(e){showStatus(e.message);}
+      });
+      td.appendChild(del);
       tr.appendChild(td);tbody.appendChild(tr);
     }
-    if(!d.codes.length){const tr=document.createElement("tr");const td=document.createElement("td");td.colSpan=4;td.textContent="Code မရှိသေးပါ။";tr.appendChild(td);tbody.appendChild(tr);}
+    if(!d.codes.length){const tr=document.createElement("tr");const td=document.createElement("td");td.colSpan=6;td.textContent="Code မရှိသေးပါ။";tr.appendChild(td);tbody.appendChild(tr);}
   }catch(e){showStatus(e.message);}
 }
 async function enterDashboard(){
@@ -132,10 +146,13 @@ $("createBtn").onclick=async()=>{
   $("createBtn").disabled=true;showStatus("Code ထုတ်နေပါသည်။");
   $("newCode").hidden=true;$("copyBtn").hidden=true;
   try{
-    const d=await callApi({action:"create",plan_months:Number($("months").value)});
+    const buyerName=$("buyerName").value.trim();
+    if(!buyerName) throw new Error("ဝယ်ယူသူအမည် ရေးထည့်ပါ။");
+    const d=await callApi({action:"create",buyer_name:buyerName,plan_months:Number($("months").value)});
     currentCode=d.code;$("newCode").textContent=currentCode;
     $("newCode").hidden=false;$("copyBtn").hidden=false;
-    showStatus("Code အသစ် ထုတ်ပြီးပါပြီ။ Customer ကို ဒီ Code ပေးနိုင်ပါပြီ။");
+    showStatus("Code အသစ် ထုတ်ပြီးပါပြီ။ ဝယ်ယူသူအမည်နှင့် Code ကို သိမ်းထားပါပြီ။");
+    $("buyerName").value="";
     await loadCodes();
   }catch(e){showStatus(e.message);}
   finally{$("createBtn").disabled=false;}
