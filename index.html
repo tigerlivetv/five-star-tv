@@ -59,54 +59,102 @@ footer{text-align:center;color:#718096;font-size:12px;padding:20px}
 <script>
 const SUPABASE_URL = "https://ojmwlnwcbesezvxuryjc.supabase.co";
 const SUPABASE_KEY = "sb_publishable_HdpdY2jPa_-Q1eDUq407JQ_HI7eC9qC";
+const TOKEN_KEY = "fiveStarSessionToken";
 const message = document.getElementById("message");
+const loginPanel = document.getElementById("loginPanel");
+const viewerPanel = document.getElementById("viewerPanel");
+const loginButton = document.getElementById("loginButton");
+
 let deviceId = localStorage.getItem("fiveStarDeviceId");
 if (!deviceId) {
   deviceId = crypto.randomUUID();
   localStorage.setItem("fiveStarDeviceId", deviceId);
 }
-document.getElementById("loginButton").addEventListener("click", async () => {
+
+const dateFormat = new Intl.DateTimeFormat("my-MM", {
+  year: "numeric", month: "long", day: "numeric"
+});
+
+function showMember(data) {
+  document.getElementById("planMonths").textContent = data.plan_months + " လ";
+  document.getElementById("activatedDate").textContent = dateFormat.format(new Date(data.activated_at));
+  document.getElementById("expiresDate").textContent = dateFormat.format(new Date(data.expires_at));
+  document.getElementById("remainingDays").textContent = data.remaining_days + " ရက်";
+  loginPanel.hidden = true;
+  viewerPanel.hidden = false;
+}
+
+async function verifyStoredSession() {
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) return;
+
+  message.textContent = "အသင်းဝင်အခြေအနေ စစ်ဆေးနေပါသည်။";
+  try {
+    const response = await fetch(SUPABASE_URL + "/functions/v1/verify-session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_KEY
+      },
+      body: JSON.stringify({ token, deviceId })
+    });
+    const result = await response.json();
+
+    if (response.ok && result.valid === true) {
+      showMember(result);
+      return;
+    }
+
+    if (response.status === 401 || response.status === 403) {
+      localStorage.removeItem(TOKEN_KEY);
+      message.textContent = "Session သက်တမ်းကုန်ပါပြီ။ Access Code အသစ်ထည့်ပါ။";
+      return;
+    }
+
+    message.textContent = result.error || "Session စစ်ဆေး၍ မရပါ။ အင်တာနက်ပြန်စစ်ပါ။";
+  } catch (error) {
+    message.textContent = "ချိတ်ဆက်မှု မအောင်မြင်ပါ။ အင်တာနက်ပြန်စစ်ပါ။";
+  }
+}
+
+loginButton.addEventListener("click", async () => {
   const code = document.getElementById("accessCode").value.trim();
   if (!code) {
     message.textContent = "Access Code ထည့်ပေးပါ။";
     return;
   }
+
   message.textContent = "စစ်ဆေးနေပါသည်။";
-  document.getElementById("loginButton").disabled = true;
+  loginButton.disabled = true;
+
   try {
     const response = await fetch(SUPABASE_URL + "/functions/v1/activate-code", {
       method: "POST",
-      headers: {"Content-Type":"application/json", "apikey":SUPABASE_KEY},
-      body: JSON.stringify({code, deviceId})
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_KEY
+      },
+      body: JSON.stringify({ code, deviceId })
     });
     const result = await response.json();
+
     if (!response.ok) throw new Error(result.error || "ဝင်ရောက်၍ မရပါ။");
-    if (!result.activated_at || !result.expires_at) {
-      throw new Error("သက်တမ်းအချက်အလက် မရရှိပါ။");
+
+    if (!result.session_token || !result.activated_at || !result.expires_at) {
+      throw new Error("Session သို့မဟုတ် သက်တမ်းအချက်အလက် မရရှိပါ။");
     }
 
-    const dateFormat = new Intl.DateTimeFormat("my-MM", {
-      year: "numeric", month: "long", day: "numeric"
-    });
-
-    document.getElementById("planMonths").textContent =
-      result.plan_months + " လ";
-    document.getElementById("activatedDate").textContent =
-      dateFormat.format(new Date(result.activated_at));
-    document.getElementById("expiresDate").textContent =
-      dateFormat.format(new Date(result.expires_at));
-    document.getElementById("remainingDays").textContent =
-      result.remaining_days + " ရက်";
-
+    localStorage.setItem(TOKEN_KEY, result.session_token);
     message.textContent = "ဝင်ရောက်မှု အောင်မြင်ပါသည်။";
-    document.getElementById("loginPanel").hidden = true;
-    document.getElementById("viewerPanel").hidden = false;
+    showMember(result);
   } catch (error) {
     message.textContent = error.message || "ချိတ်ဆက်မှု မအောင်မြင်ပါ။";
   } finally {
-    document.getElementById("loginButton").disabled = false;
+    loginButton.disabled = false;
   }
 });
+
+verifyStoredSession();
 </script>
 </body>
 </html>

@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const code = typeof body.code === "string" ? body.code.trim() : "";
+    const code = typeof body.code === "string" ? body.code.trim().toUpperCase() : "";
     const deviceId =
       typeof body.deviceId === "string" ? body.deviceId.trim() : "";
 
@@ -101,6 +101,7 @@ Deno.serve(async (req) => {
       return reply({ error: "ဤ Access Code ကို အခြား Device နှင့် ချိတ်ဆက်ထားပါသည်။" }, 403);
     }
 
+    let activatedAt = record.activated_at;
     let expiresAt = record.expires_at;
 
     if (!record.activated_at) {
@@ -145,6 +146,7 @@ Deno.serve(async (req) => {
       if (!Array.isArray(updated) || updated.length === 0) {
         return reply({ error: "Access Code ကို အခြား Device က အသုံးပြုထားပါသည်။" }, 409);
       }
+      activatedAt = now.toISOString();
     }
 
     const remainingDays = Math.max(
@@ -154,7 +156,9 @@ Deno.serve(async (req) => {
 
     return reply({
       success: true,
+      activated_at: activatedAt,
       expires_at: expiresAt,
+      plan_months: Number(record.plan_months),
       remaining_days: remainingDays,
     });
   } catch {

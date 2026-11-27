@@ -2,3 +2,6 @@ project_id = "ojmwlnwcbesezvxuryjc"
 
 [functions.activate-code]
 verify_jwt = false
+
+[functions.admin-codes]
+verify_jwt = true
