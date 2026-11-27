@@ -7,27 +7,39 @@
 <title>FIVE STAR TV</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#f3f7ff;color:#17243a;font-family:Arial,sans-serif}
-header{background:#1769e0;color:white;padding:20px;text-align:center}
-header h1{margin:0;font-size:25px;letter-spacing:1px}
-header p{margin:7px 0 0;font-size:13px}
-main{max-width:850px;margin:28px auto;padding:16px}
-.panel{background:white;border-radius:14px;padding:22px;box-shadow:0 4px 18px #173d7012;margin-bottom:18px}
-h2{font-size:19px;margin:0 0 15px;color:#1769e0}
-input{width:100%;padding:14px;border:1px solid #ccd8e8;border-radius:9px;font-size:16px;margin:5px 0 12px}
-button{width:100%;padding:14px;border:0;border-radius:9px;background:#1769e0;color:white;font-size:16px;font-weight:bold}
+[hidden]{display:none!important}
+body{margin:0;background:#090b12;color:#f5f2e9;font-family:Arial,sans-serif}
+header{background:linear-gradient(135deg,#17130e,#30200c,#100e0b);padding:25px 16px;text-align:center;border-bottom:1px solid #a98235}
+.brand{font-size:27px;font-weight:900;letter-spacing:2px;color:#f3ce76}
+header p{margin:8px 0 0;color:#c5b99e;font-size:13px}
+main{max-width:850px;margin:20px auto;padding:14px}
+.panel{background:#151821;border:1px solid #34313a;border-radius:17px;padding:20px;box-shadow:0 8px 25px #0006;margin-bottom:18px}
+h2{font-size:19px;margin:0 0 16px;color:#eac46b}
+input{width:100%;padding:15px;border:1px solid #49434a;background:#0d1018;color:white;border-radius:10px;font-size:16px;margin:7px 0 13px}
+button{cursor:pointer}
+.primary{width:100%;padding:15px;border:0;border-radius:10px;background:linear-gradient(100deg,#b88732,#f0d080);color:#17110a;font-size:16px;font-weight:bold}
 button:disabled{opacity:.6}
-#message{font-size:14px;margin-top:12px;color:#d33}
-#player{width:100%;aspect-ratio:16/9;background:#101827;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#dce8ff;text-align:center;padding:15px}
+#message{font-size:14px;margin-top:12px;color:#f08c80}
+.small{font-size:13px;color:#aaa6a0;line-height:1.6}
+.nav{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.nav button{padding:13px;border:1px solid #51432b;border-radius:11px;background:#1a1b21;color:#d8c69c;font-weight:bold}
+.nav button.active{background:linear-gradient(100deg,#b88732,#f0d080);color:#17110a;border-color:#eac46b}
+#player{width:100%;aspect-ratio:16/9;background:linear-gradient(145deg,#171b27,#080a10);border:1px solid #34313a;border-radius:13px;display:flex;align-items:center;justify-content:center;color:#d8c69c;text-align:center;padding:15px}
 #videoList{display:grid;gap:10px}
-.video-item{padding:14px;border:1px solid #e1e9f5;border-radius:9px;background:#fff}
-.small{font-size:13px;color:#718096}
-footer{text-align:center;color:#718096;font-size:12px;padding:20px}
+.video-item{padding:15px;border:1px solid #39343a;border-radius:12px;background:#1c1e27;margin-bottom:10px}
+.account-hero{padding:23px 15px;text-align:center;background:linear-gradient(145deg,#33240f,#19150f);border:1px solid #8d682b;border-radius:15px;margin-bottom:16px}
+.account-hero .number{font-size:42px;font-weight:900;color:#f3ce76;margin:8px 0}
+.account-hero .caption{color:#c8b994;font-size:13px}
+.status{display:inline-block;padding:6px 14px;border-radius:20px;background:#173b2c;color:#8ee0ad;font-size:12px;font-weight:bold}
+.detail{display:flex;justify-content:space-between;gap:12px;padding:14px 2px;border-bottom:1px solid #34313a;font-size:14px}
+.detail span{color:#aaa6a0}
+.detail strong{text-align:right;color:#f4e6c6}
+footer{text-align:center;color:#77716a;font-size:12px;padding:22px}
 </style>
 </head>
 <body>
 <header>
-<h1>FIVE STAR TV</h1>
+<div class="brand">★ FIVE STAR TV ★</div>
 <p>သင့်အတွက် ဖျော်ဖြေရေးကမ္ဘာ</p>
 </header>
 
@@ -36,21 +48,37 @@ footer{text-align:center;color:#718096;font-size:12px;padding:20px}
 <h2>အသင်းဝင် Login</h2>
 <p class="small">Admin ထံမှ ရရှိထားသော Access Code ကို ထည့်သွင်းပါ။</p>
 <input id="accessCode" type="password" placeholder="Access Code ထည့်ပါ" autocomplete="off">
-<button id="loginButton" type="button">ဝင်ရောက်မည်</button>
+<button id="loginButton" class="primary" type="button">ဝင်ရောက်မည်</button>
 <div id="message"></div>
 </section>
 
 <section class="panel" id="viewerPanel" hidden>
-<h2>FIVE STAR TV အသင်းဝင်အချက်အလက်</h2>
-<div class="video-item">
-<p>Package သက်တမ်း: <strong id="planMonths">-</strong></p>
-<p>စတင်ကြည့်ရှုသည့်နေ့: <strong id="activatedDate">-</strong></p>
-<p>ကုန်ဆုံးမည့်ရက်: <strong id="expiresDate">-</strong></p>
-<p>ကျန်ရှိသည့်ရက်: <strong id="remainingDays">-</strong></p>
-</div>
-<h2 style="margin-top:20px">ဗီဒီယိုကြည့်ရှုရန်</h2>
+<nav class="nav">
+<button type="button" id="homeTab" class="active">⌂ ပင်မစာမျက်နှာ</button>
+<button type="button" id="accountTab">♙ အကောင့်</button>
+</nav>
+
+<section id="homePage">
+<h2>FIVE STAR TV</h2>
+<p class="small">ကြိုက်နှစ်သက်ရာ ရုပ်ရှင်နှင့် ဇာတ်လမ်းတွဲများကို ကြည့်ရှုနိုင်ပါသည်။</p>
 <div id="player">ဗီဒီယိုကို ရွေးချယ်ပါ</div>
 <div id="videoList" style="margin-top:16px"></div>
+</section>
+
+<section id="accountPage" hidden>
+<h2>အကောင့်သက်တမ်း</h2>
+<div class="account-hero">
+<div class="caption">ကျန်ရှိသော သက်တမ်း</div>
+<div class="number"><span id="remainingDays">-</span></div>
+<div class="status" id="accountStatus">ACTIVE</div>
+</div>
+<div class="video-item">
+<div class="detail"><span>Package</span><strong id="planMonths">-</strong></div>
+<div class="detail"><span>စတင်အသုံးပြုသည့်နေ့</span><strong id="activatedDate">-</strong></div>
+<div class="detail"><span>သက်တမ်းကုန်ဆုံးမည့်နေ့</span><strong id="expiresDate">-</strong></div>
+</div>
+<p class="small">အကောင့်သက်တမ်းနှင့် အခြေအနေကို Server မှ အတည်ပြုထားသော အချက်အလက်အတိုင်း ပြသထားပါသည်။</p>
+</section>
 </section>
 </main>
 
@@ -75,13 +103,29 @@ const dateFormat = new Intl.DateTimeFormat("my-MM", {
   year: "numeric", month: "long", day: "numeric"
 });
 
+function switchPage(page) {
+  const home = page === "home";
+  document.getElementById("homePage").hidden = !home;
+  document.getElementById("accountPage").hidden = home;
+  document.getElementById("homeTab").classList.toggle("active", home);
+  document.getElementById("accountTab").classList.toggle("active", !home);
+}
+
+document.getElementById("homeTab").addEventListener("click", () => switchPage("home"));
+document.getElementById("accountTab").addEventListener("click", () => switchPage("account"));
+
 function showMember(data) {
+  const days = Number(data.remaining_days);
   document.getElementById("planMonths").textContent = data.plan_months + " လ";
   document.getElementById("activatedDate").textContent = dateFormat.format(new Date(data.activated_at));
   document.getElementById("expiresDate").textContent = dateFormat.format(new Date(data.expires_at));
-  document.getElementById("remainingDays").textContent = data.remaining_days + " ရက်";
+  document.getElementById("remainingDays").textContent =
+    (Number.isFinite(days) ? Math.max(0, days) : "-") + " ရက်";
+  document.getElementById("accountStatus").textContent =
+    Number.isFinite(days) && days > 0 ? "ACTIVE · အသုံးပြုနိုင်" : "EXPIRED · သက်တမ်းကုန်";
   loginPanel.hidden = true;
   viewerPanel.hidden = false;
+  switchPage("home");
 }
 
 async function verifyStoredSession() {
