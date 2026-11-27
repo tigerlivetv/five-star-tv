@@ -59,7 +59,7 @@ td,th{padding:10px 6px;border-bottom:1px solid #e5ebf5;text-align:left}
 <button id="refreshBtn" class="secondary">စာရင်း ပြန်ဖွင့်မည်</button>
 <div class="tablewrap">
 <table>
-<thead><tr><th>ဝယ်သူ</th><th>Access Code</th><th>Package</th><th>ထုတ်သည့်ရက်</th><th>အခြေအနေ</th><th>လုပ်ဆောင်ချက်</th></tr></thead>
+<thead><tr><th>ဝယ်သူ</th><th>Access Code</th><th>Package</th><th>ထုတ်သည့်ရက်</th><th>ကုန်ဆုံးရက်</th><th>အခြေအနေ</th><th>လုပ်ဆောင်ချက်</th></tr></thead>
 <tbody id="codeRows"></tbody>
 </table>
 </div>
@@ -104,6 +104,7 @@ async function loadCodes(){
         c.code_value || "ယခင် Code",
         c.plan_months+" လ",
         new Date(c.created_at).toLocaleDateString(),
+        c.expires_at ? new Date(c.expires_at).toLocaleDateString() : "Activate လုပ်ပြီးမှ သတ်မှတ်မည်",
         c.disabled_at?"ပိတ်ထားသည်":c.activated_at?"အသုံးပြုပြီး":"အသုံးမပြုရသေး"
       ];
       vals.forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});
@@ -129,7 +130,7 @@ async function loadCodes(){
       td.appendChild(del);
       tr.appendChild(td);tbody.appendChild(tr);
     }
-    if(!d.codes.length){const tr=document.createElement("tr");const td=document.createElement("td");td.colSpan=6;td.textContent="Code မရှိသေးပါ။";tr.appendChild(td);tbody.appendChild(tr);}
+    if(!d.codes.length){const tr=document.createElement("tr");const td=document.createElement("td");td.colSpan=7;td.textContent="Code မရှိသေးပါ။";tr.appendChild(td);tbody.appendChild(tr);}
   }catch(e){showStatus(e.message);}
 }
 async function enterDashboard(){
