@@ -24,6 +24,12 @@ td,th{padding:10px 6px;border-bottom:1px solid #e5ebf5;text-align:left}
 .tablewrap{overflow-x:auto}
 .small{font-size:13px;color:#718096}
 [hidden]{display:none!important}
+
+textarea{width:100%;padding:13px;border:1px solid #ccd8e8;border-radius:9px;font-size:15px;margin:6px 0 12px;min-height:75px;font-family:Arial,sans-serif}
+.video-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.video-actions button{font-size:14px}
+.video-cover{width:65px;height:45px;object-fit:cover;border-radius:6px}
+
 </style>
 </head>
 <body>
@@ -65,6 +71,52 @@ td,th{padding:10px 6px;border-bottom:1px solid #e5ebf5;text-align:left}
 </div>
 <p class="small">Code အသစ်များကို ပြန်ကြည့်ပြီး Copy လုပ်နိုင်ပါသည်။ ယခင် Code များမှာ ပြန်ဖော်မရပါ။</p>
 </section>
+
+<section class="panel" id="videoPanel">
+<h2>Video Management</h2>
+<input type="hidden" id="videoId">
+
+<label>Video ခေါင်းစဉ်</label>
+<input id="videoTitle" placeholder="ဇာတ်လမ်းတွဲ အပိုင်း ၁">
+
+<label>အမျိုးအစား</label>
+<input id="videoCategory" placeholder="မြန်မာဇာတ်လမ်းတွဲ">
+
+<label>အပိုင်းနံပါတ်</label>
+<input id="videoEpisode" type="number" min="1" placeholder="1">
+
+<label>Cover Image URL</label>
+<input id="videoCover" type="url" placeholder="https://...">
+
+<label>OK.ru Embed URL</label>
+<input id="videoEmbed" type="url" placeholder="https://ok.ru/videoembed/123456789">
+
+<label>အစီအစဉ်နံပါတ်</label>
+<input id="videoOrder" type="number" value="0">
+
+<label>ဖော်ပြချက်</label>
+<textarea id="videoDescription" placeholder="Video အကြောင်းအရာ"></textarea>
+
+<label><input id="videoActive" type="checkbox" checked style="width:auto"> Customer Page တွင် ပြသမည်</label>
+
+<div class="video-actions">
+<button id="saveVideoBtn">Video သိမ်းမည်</button>
+<button id="cancelVideoBtn" class="secondary" type="button">အသစ်ပြန်စမည်</button>
+</div>
+<div id="videoStatus" class="small"></div>
+</section>
+
+<section class="panel">
+<h2>ထည့်ထားသော Videos</h2>
+<button id="refreshVideosBtn" class="secondary">စာရင်း ပြန်ဖွင့်မည်</button>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Cover</th><th>ခေါင်းစဉ်</th><th>အမျိုးအစား</th><th>အခြေအနေ</th><th>လုပ်ဆောင်ချက်</th></tr></thead>
+<tbody id="videoRows"></tbody>
+</table>
+</div>
+</section>
+
 <button id="logoutBtn" class="secondary">Logout</button>
 </div>
 </main>
@@ -136,6 +188,7 @@ async function loadCodes(){
 async function enterDashboard(){
   $("loginPanel").hidden=true;$("dashboard").hidden=false;
   await loadCodes();
+  await loadVideos();
 }
 $("loginBtn").onclick=async()=>{
   $("loginStatus").textContent="စစ်ဆေးနေပါသည်။";
@@ -163,6 +216,179 @@ $("copyBtn").onclick=async()=>{
   catch(e){showStatus("Code ကို ဖိထားပြီး Copy လုပ်ပါ။");}
 };
 $("refreshBtn").onclick=loadCodes;
+
+const videoFn="https://ojmwlnwcbesezvxuryjc.supabase.co/functions/v1/admin-videos";
+
+async function callVideoApi(payload){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session) throw new Error("Admin Login ပြန်ဝင်ပါ။");
+
+  const r=await fetch(videoFn,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "apikey":"sb_publishable_HdpdY2jPa_-Q1eDUq407JQ_HI7eC9qC",
+      "Authorization":"Bearer "+session.access_token
+    },
+    body:JSON.stringify(payload)
+  });
+
+  const d=await r.json();
+  if(!r.ok || d.success===false)
+    throw new Error(d.message||d.error||"Video လုပ်ဆောင်မှု မအောင်မြင်ပါ။");
+  return d;
+}
+
+function videoStatus(message){
+  $("videoStatus").textContent=message;
+}
+
+function resetVideoForm(){
+  $("videoId").value="";
+  $("videoTitle").value="";
+  $("videoCategory").value="";
+  $("videoEpisode").value="";
+  $("videoCover").value="";
+  $("videoEmbed").value="";
+  $("videoOrder").value="0";
+  $("videoDescription").value="";
+  $("videoActive").checked=true;
+  $("saveVideoBtn").textContent="Video သိမ်းမည်";
+  videoStatus("");
+}
+
+async function loadVideos(){
+  const tbody=$("videoRows");
+  tbody.replaceChildren();
+
+  try{
+    const d=await callVideoApi({action:"list"});
+    const videos=d.videos||[];
+
+    for(const v of videos){
+      const tr=document.createElement("tr");
+      const coverTd=document.createElement("td");
+
+      if(v.cover_url){
+        const img=document.createElement("img");
+        img.src=v.cover_url;
+        img.className="video-cover";
+        img.alt="Cover";
+        coverTd.appendChild(img);
+      }else{
+        coverTd.textContent="မရှိ";
+      }
+      tr.appendChild(coverTd);
+
+      for(const value of [
+        v.title||"",
+        v.category||"",
+        v.is_active?"ဖွင့်ထားသည်":"ပိတ်ထားသည်"
+      ]){
+        const td=document.createElement("td");
+        td.textContent=value;
+        tr.appendChild(td);
+      }
+
+      const actions=document.createElement("td");
+
+      const edit=document.createElement("button");
+      edit.textContent="ပြင်မည်";
+      edit.addEventListener("click",()=>{
+        $("videoId").value=v.id;
+        $("videoTitle").value=v.title||"";
+        $("videoCategory").value=v.category||"";
+        $("videoEpisode").value=v.episode_number||"";
+        $("videoCover").value=v.cover_url||"";
+        $("videoEmbed").value=v.ok_embed_url||"";
+        $("videoOrder").value=v.sort_order??0;
+        $("videoDescription").value=v.description||"";
+        $("videoActive").checked=!!v.is_active;
+        $("saveVideoBtn").textContent="ပြင်ဆင်ချက် သိမ်းမည်";
+        videoStatus("ပြင်ဆင်ရန် Video ရွေးထားပါသည်။");
+        $("videoTitle").scrollIntoView({behavior:"smooth",block:"center"});
+      });
+      actions.appendChild(edit);
+
+      const del=document.createElement("button");
+      del.textContent="ဖျက်မည်";
+      del.className="danger";
+      del.style.marginLeft="5px";
+      del.addEventListener("click",async()=>{
+        if(!confirm("ဒီ Video ကို အပြီးဖျက်မှာ သေချာပါသလား။"))return;
+        try{
+          await callVideoApi({action:"delete",id:v.id});
+          videoStatus("Video ဖျက်ပြီးပါပြီ။");
+          await loadVideos();
+        }catch(e){
+          videoStatus(e.message);
+        }
+      });
+      actions.appendChild(del);
+      tr.appendChild(actions);
+      tbody.appendChild(tr);
+    }
+
+    if(!videos.length){
+      const tr=document.createElement("tr");
+      const td=document.createElement("td");
+      td.colSpan=5;
+      td.textContent="Video မရှိသေးပါ။";
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+    }
+  }catch(e){
+    videoStatus(e.message);
+  }
+}
+
+$("saveVideoBtn").onclick=async()=>{
+  const btn=$("saveVideoBtn");
+  btn.disabled=true;
+
+  try{
+    const title=$("videoTitle").value.trim();
+    const embed=$("videoEmbed").value.trim();
+
+    if(!title) throw new Error("Video ခေါင်းစဉ် ရေးထည့်ပါ။");
+    if(!embed) throw new Error("OK.ru Embed URL ထည့်ပါ။");
+
+    const payload={
+      title,
+      category:$("videoCategory").value.trim(),
+      episode_number:$("videoEpisode").value
+        ?Number($("videoEpisode").value):null,
+      cover_url:$("videoCover").value.trim(),
+      ok_embed_url:embed,
+      sort_order:Number($("videoOrder").value||0),
+      description:$("videoDescription").value.trim(),
+      is_active:$("videoActive").checked
+    };
+
+    const id=$("videoId").value;
+
+    if(id){
+      payload.action="update";
+      payload.id=id;
+    }else{
+      payload.action="create";
+    }
+
+    await callVideoApi(payload);
+    resetVideoForm();
+    videoStatus("Video သိမ်းပြီးပါပြီ။");
+    await loadVideos();
+
+  }catch(e){
+    videoStatus(e.message);
+  }finally{
+    btn.disabled=false;
+  }
+};
+
+$("cancelVideoBtn").onclick=resetVideoForm;
+$("refreshVideosBtn").onclick=loadVideos;
+
 $("logoutBtn").onclick=async()=>{await sb.auth.signOut();$("dashboard").hidden=true;$("loginPanel").hidden=false;};
 const {data:{session}}=await sb.auth.getSession();
 if(session) await enterDashboard();
