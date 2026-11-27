@@ -41,7 +41,14 @@ footer{text-align:center;color:#718096;font-size:12px;padding:20px}
 </section>
 
 <section class="panel" id="viewerPanel" hidden>
-<h2>ဗီဒီယိုကြည့်ရှုရန်</h2>
+<h2>FIVE STAR TV အသင်းဝင်အချက်အလက်</h2>
+<div class="video-item">
+<p>Package သက်တမ်း: <strong id="planMonths">-</strong></p>
+<p>စတင်ကြည့်ရှုသည့်နေ့: <strong id="activatedDate">-</strong></p>
+<p>ကုန်ဆုံးမည့်ရက်: <strong id="expiresDate">-</strong></p>
+<p>ကျန်ရှိသည့်ရက်: <strong id="remainingDays">-</strong></p>
+</div>
+<h2 style="margin-top:20px">ဗီဒီယိုကြည့်ရှုရန်</h2>
 <div id="player">ဗီဒီယိုကို ရွေးချယ်ပါ</div>
 <div id="videoList" style="margin-top:16px"></div>
 </section>
@@ -74,6 +81,23 @@ document.getElementById("loginButton").addEventListener("click", async () => {
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "ဝင်ရောက်၍ မရပါ။");
+    if (!result.activated_at || !result.expires_at) {
+      throw new Error("သက်တမ်းအချက်အလက် မရရှိပါ။");
+    }
+
+    const dateFormat = new Intl.DateTimeFormat("my-MM", {
+      year: "numeric", month: "long", day: "numeric"
+    });
+
+    document.getElementById("planMonths").textContent =
+      result.plan_months + " လ";
+    document.getElementById("activatedDate").textContent =
+      dateFormat.format(new Date(result.activated_at));
+    document.getElementById("expiresDate").textContent =
+      dateFormat.format(new Date(result.expires_at));
+    document.getElementById("remainingDays").textContent =
+      result.remaining_days + " ရက်";
+
     message.textContent = "ဝင်ရောက်မှု အောင်မြင်ပါသည်။";
     document.getElementById("loginPanel").hidden = true;
     document.getElementById("viewerPanel").hidden = false;
