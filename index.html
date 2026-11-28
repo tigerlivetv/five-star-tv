@@ -45,6 +45,88 @@ footer{text-align:center;color:#77716a;font-size:12px;padding:22px}
 .video-card .video-meta{font-size:12px;color:#aaa6a0;margin-top:6px}
 .video-message{padding:14px;color:#aaa6a0;text-align:center;font-size:13px}
 
+
+/* FIXED PLAYER + SCROLLABLE VIDEO LIST */
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  flex: 0 0 auto;
+}
+
+main {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto;
+}
+
+#viewerPanel {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#homePage {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#homePage > h2,
+#homePage > p {
+  flex: 0 0 auto;
+}
+
+#player {
+  flex: 0 0 auto;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+#videoList {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 12px 2px 20px;
+}
+
+#videoList .video-card {
+  margin: 0;
+}
+
+#accountPage {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+footer {
+  flex: 0 0 auto;
+  padding: 8px;
+}
+
 </style>
 </head>
 <body>
@@ -304,7 +386,7 @@ async function loadVideos() {
           frame.referrerPolicy = "strict-origin-when-cross-origin";
 
           player.replaceChildren(frame);
-          player.scrollIntoView({ behavior: "smooth", block: "start" });
+
         } catch (error) {
           alert("ဒီ Video ရဲ့ OK.ru Embed Link မှားနေပါတယ်။");
         }
