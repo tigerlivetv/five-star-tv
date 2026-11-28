@@ -121,6 +121,40 @@ textarea{width:100%;padding:13px;border:1px solid #ccd8e8;border-radius:9px;font
 </div>
 </section>
 
+
+<section class="panel" id="advertisementPanel">
+<h2>Advertisement Management</h2>
+<input type="hidden" id="adId">
+<label>ကြော်ငြာခေါင်းစဉ်</label>
+<input id="adTitle" placeholder="ကြော်ငြာခေါင်းစဉ်">
+<label>ကြော်ငြာပုံ (Gallery မှ ရွေးရန်)</label>
+<input id="adImageFile" type="file" accept="image/jpeg,image/png,image/webp">
+<button id="uploadAdImageBtn" type="button" class="secondary">ကြော်ငြာပုံ Upload တင်မည်</button>
+<div class="small">JPG / PNG / WEBP — 5MB အထိ</div>
+<label>ကြော်ငြာပုံ URL</label>
+<input id="adImageUrl" type="url" placeholder="Upload ပြီးလျှင် အလိုအလျောက် ဖြည့်ပေးမည်">
+<label>နှိပ်လျှင် သွားမည့် Link</label>
+<input id="adTargetUrl" type="url" placeholder="https://example.com သို့မဟုတ် /detail.html">
+<label>အစီအစဉ်နံပါတ်</label>
+<input id="adOrder" type="number" value="0">
+<label><input id="adActive" type="checkbox" checked style="width:auto"> Customer Page တွင် ပြသမည်</label>
+<div class="video-actions">
+<button id="saveAdBtn" type="button">ကြော်ငြာ သိမ်းမည်</button>
+<button id="resetAdBtn" type="button" class="secondary">အသစ်ပြန်စမည်</button>
+</div>
+<div id="adStatus" class="small"></div>
+</section>
+<section class="panel">
+<h2>ထည့်ထားသော ကြော်ငြာများ</h2>
+<button id="refreshAdsBtn" type="button" class="secondary">ကြော်ငြာစာရင်း ပြန်ဖွင့်မည်</button>
+<div class="tablewrap">
+<table>
+<thead><tr><th>ပုံ</th><th>ခေါင်းစဉ်</th><th>Link</th><th>အခြေအနေ</th><th>လုပ်ဆောင်ချက်</th></tr></thead>
+<tbody id="adRows"></tbody>
+</table>
+</div>
+</section>
+
 <button id="logoutBtn" class="secondary">Logout</button>
 </div>
 </main>
@@ -193,6 +227,7 @@ async function enterDashboard(){
   $("loginPanel").hidden=true;$("dashboard").hidden=false;
   await loadCodes();
   await loadVideos();
+  await loadAds();
 }
 $("loginBtn").onclick=async()=>{
   $("loginStatus").textContent="စစ်ဆေးနေပါသည်။";
@@ -434,6 +469,170 @@ $("saveVideoBtn").onclick=async()=>{
 
 $("cancelVideoBtn").onclick=resetVideoForm;
 $("refreshVideosBtn").onclick=loadVideos;
+
+
+const adFn="https://ojmwlnwcbesezvxuryjc.supabase.co/functions/v1/admin-advertisements";
+
+async function callAdApi(payload){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session) throw new Error("Admin Login ပြန်ဝင်ပါ။");
+  const r=await fetch(adFn,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "apikey":"sb_publishable_HdpdY2jPa_-Q1eDUq407JQ_HI7eC9qC",
+      "Authorization":"Bearer "+session.access_token
+    },
+    body:JSON.stringify(payload)
+  });
+  const d=await r.json();
+  if(!r.ok) throw new Error(d.error||d.message||"ကြော်ငြာလုပ်ဆောင်မှု မအောင်မြင်ပါ။");
+  return d;
+}
+
+function adStatus(message){
+  $("adStatus").textContent=message;
+}
+
+function resetAdForm(){
+  $("adId").value="";
+  $("adTitle").value="";
+  $("adImageFile").value="";
+  $("adImageUrl").value="";
+  $("adTargetUrl").value="";
+  $("adOrder").value="0";
+  $("adActive").checked=true;
+  $("saveAdBtn").textContent="ကြော်ငြာ သိမ်းမည်";
+  adStatus("");
+}
+
+async function loadAds(){
+  const tbody=$("adRows");
+  tbody.replaceChildren();
+  try{
+    const d=await callAdApi({action:"list"});
+    const ads=d.advertisements||[];
+    for(const a of ads){
+      const tr=document.createElement("tr");
+      const imgTd=document.createElement("td");
+      if(a.image_url){
+        const img=document.createElement("img");
+        img.src=a.image_url;
+        img.alt="Advertisement";
+        img.style.width="90px";
+        img.style.maxWidth="90px";
+        img.style.borderRadius="8px";
+        imgTd.appendChild(img);
+      }else{
+        imgTd.textContent="မရှိ";
+      }
+      tr.appendChild(imgTd);
+      for(const value of [a.title||"",a.target_url||"",a.is_active?"ဖွင့်ထားသည်":"ပိတ်ထားသည်"]){
+        const td=document.createElement("td");
+        td.textContent=value;
+        tr.appendChild(td);
+      }
+      const actions=document.createElement("td");
+      const edit=document.createElement("button");
+      edit.type="button";
+      edit.textContent="ပြင်မည်";
+      edit.addEventListener("click",()=>{
+        $("adId").value=a.id;
+        $("adTitle").value=a.title||"";
+        $("adImageUrl").value=a.image_url||"";
+        $("adTargetUrl").value=a.target_url||"";
+        $("adOrder").value=a.sort_order??0;
+        $("adActive").checked=!!a.is_active;
+        $("saveAdBtn").textContent="ပြင်ဆင်ချက် သိမ်းမည်";
+        adStatus("ပြင်ဆင်ရန် ကြော်ငြာကို ရွေးထားပါသည်။");
+        $("advertisementPanel").scrollIntoView({behavior:"smooth",block:"start"});
+      });
+      actions.appendChild(edit);
+      const del=document.createElement("button");
+      del.type="button";
+      del.textContent="ဖျက်မည်";
+      del.className="danger";
+      del.style.marginLeft="5px";
+      del.addEventListener("click",async()=>{
+        if(!confirm("ဒီကြော်ငြာကို အပြီးဖျက်မှာ သေချာပါသလား။")) return;
+        try{
+          await callAdApi({action:"delete",id:a.id});
+          adStatus("ကြော်ငြာ ဖျက်ပြီးပါပြီ။");
+          await loadAds();
+        }catch(e){adStatus(e.message);}
+      });
+      actions.appendChild(del);
+      tr.appendChild(actions);
+      tbody.appendChild(tr);
+    }
+    if(!ads.length){
+      const tr=document.createElement("tr");
+      const td=document.createElement("td");
+      td.colSpan=5;
+      td.textContent="ကြော်ငြာ မရှိသေးပါ။";
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+    }
+  }catch(e){adStatus(e.message);}
+}
+
+$("uploadAdImageBtn").onclick=async()=>{
+  const btn=$("uploadAdImageBtn");
+  const file=$("adImageFile").files[0];
+  if(!file){adStatus("Gallery မှ ကြော်ငြာပုံတစ်ပုံ အရင်ရွေးပါ။");return;}
+  btn.disabled=true;
+  adStatus("ကြော်ငြာပုံ Upload တင်နေပါသည်။");
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session) throw new Error("Admin Login ပြန်ဝင်ပါ။");
+    const form=new FormData();
+    form.append("file",file);
+    const r=await fetch(adFn,{
+      method:"POST",
+      headers:{
+        "apikey":"sb_publishable_HdpdY2jPa_-Q1eDUq407JQ_HI7eC9qC",
+        "Authorization":"Bearer "+session.access_token
+      },
+      body:form
+    });
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||"ကြော်ငြာပုံ Upload မအောင်မြင်ပါ။");
+    $("adImageUrl").value=d.image_url;
+    $("adImageFile").value="";
+    adStatus("ပုံ Upload အောင်မြင်ပါပြီ။ ကြော်ငြာ သိမ်းနိုင်ပါပြီ။");
+  }catch(e){adStatus(e.message);}
+  finally{btn.disabled=false;}
+};
+
+$("saveAdBtn").onclick=async()=>{
+  const btn=$("saveAdBtn");
+  btn.disabled=true;
+  try{
+    const title=$("adTitle").value.trim();
+    const image_url=$("adImageUrl").value.trim();
+    const target_url=$("adTargetUrl").value.trim();
+    if(!title) throw new Error("ကြော်ငြာခေါင်းစဉ် ထည့်ပါ။");
+    if(!image_url) throw new Error("ကြော်ငြာပုံ Upload အရင်တင်ပါ။");
+    if(!target_url) throw new Error("သွားမည့် Link ထည့်ပါ။");
+    const payload={
+      title,image_url,target_url,
+      sort_order:Number($("adOrder").value||0),
+      is_active:$("adActive").checked
+    };
+    const id=$("adId").value;
+    if(id){payload.action="update";payload.id=id;}
+    else{payload.action="create";}
+    await callAdApi(payload);
+    resetAdForm();
+    adStatus("ကြော်ငြာ သိမ်းပြီးပါပြီ။");
+    await loadAds();
+  }catch(e){adStatus(e.message);}
+  finally{btn.disabled=false;}
+};
+
+$("resetAdBtn").onclick=resetAdForm;
+$("refreshAdsBtn").onclick=loadAds;
+
 
 $("logoutBtn").onclick=async()=>{await sb.auth.signOut();$("dashboard").hidden=true;$("loginPanel").hidden=false;};
 const {data:{session}}=await sb.auth.getSession();
