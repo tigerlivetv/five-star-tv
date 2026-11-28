@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#1769e0">
+<meta name="theme-color" content="#07151b">
 <title>FIVE STAR TV</title>
 <style>
 *{box-sizing:border-box}
@@ -273,6 +273,102 @@ main {
   }
 }
 
+
+/* FIVE STAR TV - DARK CYAN THEME + BOTTOM NAV */
+:root { color-scheme: dark; }
+html, body { background:#070d12; color:#edf7f8; }
+body { padding-bottom:env(safe-area-inset-bottom); }
+header {
+  padding:17px 14px 14px;
+  text-align:left;
+  background:#0b151c;
+  border-bottom:1px solid #17414a;
+  box-shadow:0 4px 18px #0008;
+}
+.brand { color:#23d5d7; font-size:23px; letter-spacing:1.5px; }
+header p { color:#91aeb3; font-size:12px; margin-top:5px; }
+main { max-width:850px; padding:12px 12px 105px; }
+.panel {
+  background:#0d171e;
+  border:1px solid #1a343c;
+  border-radius:13px;
+  box-shadow:0 8px 24px #0007;
+}
+h2 { color:#29cbd0; }
+input { background:#091218; border-color:#28505a; color:#f4ffff; }
+.primary {
+  background:linear-gradient(100deg,#087e8a,#20cbd0);
+  color:#031316;
+}
+#viewerPanel { padding:12px 10px 100px; margin-bottom:0; }
+#homePage > h2 { color:#eaf8f8; font-size:18px; margin:3px 0 7px; }
+#homePage > p { color:#91aeb3; }
+
+#videoList {
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:13px 9px;
+  padding:8px 0 24px;
+}
+.video-card {
+  background:#101d24;
+  border:1px solid #1b3942;
+  border-radius:9px;
+  padding:5px;
+  color:#effafa;
+  gap:6px;
+}
+.video-card img { aspect-ratio:2/3; border-radius:6px; }
+.video-card .video-title { color:#effafa; font-size:11px; line-height:1.45; }
+.video-card .video-meta { color:#78aeb5; font-size:9px; }
+
+.account-hero {
+  background:linear-gradient(145deg,#10323a,#0b171d);
+  border-color:#23606a;
+}
+.account-hero .number { color:#28d3d5; }
+.status { background:#103b32; color:#8ee8c2; }
+.video-item { background:#101d24; border-color:#1b3942; }
+.detail { border-bottom-color:#1c353d; }
+.detail strong { color:#e8f7f7; }
+
+.bottom-nav {
+  position:fixed;
+  z-index:1000;
+  left:0;
+  right:0;
+  bottom:0;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:0;
+  padding:7px 8px calc(7px + env(safe-area-inset-bottom));
+  background:#080f14;
+  border-top:1px solid #1b4149;
+  box-shadow:0 -5px 20px #0008;
+}
+.bottom-nav button {
+  min-height:57px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  border:0;
+  border-radius:9px;
+  background:transparent;
+  color:#82999e;
+  font-size:10px;
+  font-weight:600;
+}
+.bottom-nav button .nav-icon { font-size:22px; line-height:1.1; }
+.bottom-nav button.active { color:#28d5d8; background:#10272d; }
+#videoOverlay { z-index:99999; }
+
+@media(max-width:360px) {
+  #viewerPanel { padding-left:7px; padding-right:7px; }
+  #videoList { gap:9px 6px; }
+  .video-card { padding:4px; }
+}
+
 </style>
 </head>
 <body>
@@ -291,11 +387,6 @@ main {
 </section>
 
 <section class="panel" id="viewerPanel" hidden>
-<nav class="nav">
-<button type="button" id="homeTab" class="active">⌂ ပင်မစာမျက်နှာ</button>
-<button type="button" id="accountTab">♙ အကောင့်</button>
-</nav>
-
 <section id="homePage">
 <h2>FIVE STAR TV</h2>
 <p class="small">ကြိုက်နှစ်သက်ရာ ရုပ်ရှင်နှင့် ဇာတ်လမ်းတွဲများကို ကြည့်ရှုနိုင်ပါသည်။</p>
@@ -317,6 +408,12 @@ main {
 </div>
 <p class="small">အကောင့်သက်တမ်းနှင့် အခြေအနေကို Server မှ အတည်ပြုထားသော အချက်အလက်အတိုင်း ပြသထားပါသည်။</p>
 </section>
+
+<nav id="bottomNav" class="bottom-nav" aria-label="အောက်ခြေမီနူး">
+<button type="button" id="homeTab" class="active"><span class="nav-icon">⌂</span><span>ပင်မစာမျက်နှာ</span></button>
+<button type="button" id="moviesTab"><span class="nav-icon">▣</span><span>ရုပ်ရှင်များ</span></button>
+<button type="button" id="accountTab"><span class="nav-icon">♙</span><span>အကောင့်စစ်ရန်</span></button>
+</nav>
 
 <div id="videoOverlay" aria-hidden="true">
   <button id="closeVideo" type="button">✕ ပိတ်မည်</button>
@@ -348,16 +445,30 @@ const dateFormat = new Intl.DateTimeFormat("my-MM", {
 });
 
 function switchPage(page) {
-  const home = page === "home";
+  const home = page !== "account";
   document.getElementById("homePage").hidden = !home;
   document.getElementById("accountPage").hidden = home;
-  document.getElementById("homeTab").classList.toggle("active", home);
-  document.getElementById("accountTab").classList.toggle("active", !home);
+
+  document.getElementById("homeTab").classList.toggle("active", page === "home");
+  document.getElementById("moviesTab").classList.toggle("active", page === "movies");
+  document.getElementById("accountTab").classList.toggle("active", page === "account");
+
+  if (page === "movies") {
+    requestAnimationFrame(() => {
+      const list = document.getElementById("videoList");
+      if (list) window.scrollTo({
+        top: list.getBoundingClientRect().top + window.scrollY - 12,
+        behavior: "smooth"
+      });
+    });
+  } else if (page === "home") {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 }
 
 document.getElementById("homeTab").addEventListener("click", () => switchPage("home"));
+document.getElementById("moviesTab").addEventListener("click", () => switchPage("movies"));
 document.getElementById("accountTab").addEventListener("click", () => switchPage("account"));
-
 function showMember(data) {
   const days = Number(data.remaining_days);
   document.getElementById("planMonths").textContent = data.plan_months + " လ";
