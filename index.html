@@ -127,6 +127,152 @@ footer {
   padding: 8px;
 }
 
+
+/* POSTER GRID DESIGN */
+html, body {
+  height: auto;
+  min-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body {
+  display: block;
+}
+
+main {
+  display: block;
+  min-height: 0;
+  overflow: visible;
+  margin: 12px auto;
+}
+
+#viewerPanel {
+  display: block;
+  min-height: 0;
+  overflow: visible;
+}
+
+#homePage {
+  display: block;
+  min-height: 0;
+  overflow: visible;
+}
+
+#homePage > h2 {
+  margin-bottom: 8px;
+}
+
+#homePage > p {
+  margin-bottom: 18px;
+}
+
+#player {
+  display: none !important;
+}
+
+#videoList {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 9px;
+  padding: 8px 0 25px;
+  margin-top: 12px !important;
+  min-height: 0;
+  overflow: visible;
+}
+
+.video-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 7px;
+  padding: 6px;
+  min-width: 0;
+  border-radius: 10px;
+  background: #171a24;
+}
+
+.video-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 7px;
+  background: #10131b;
+}
+
+.video-card .video-info {
+  width: 100%;
+  min-width: 0;
+}
+
+.video-card .video-title {
+  font-size: 12px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.video-card .video-meta {
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+#videoOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  background: #000;
+  flex-direction: column;
+}
+
+#videoOverlay.open {
+  display: flex;
+}
+
+#closeVideo {
+  flex: 0 0 48px;
+  width: 100%;
+  border: 0;
+  background: #171a24;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+#fullVideoFrame {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  background: #000;
+}
+
+#fullVideoFrame iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border: 0;
+  background: #000;
+}
+
+@media (max-width: 360px) {
+  #videoList {
+    gap: 8px 6px;
+  }
+  .video-card {
+    padding: 4px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -171,6 +317,12 @@ footer {
 </div>
 <p class="small">အကောင့်သက်တမ်းနှင့် အခြေအနေကို Server မှ အတည်ပြုထားသော အချက်အလက်အတိုင်း ပြသထားပါသည်။</p>
 </section>
+
+<div id="videoOverlay" aria-hidden="true">
+  <button id="closeVideo" type="button">✕ ပိတ်မည်</button>
+  <div id="fullVideoFrame"></div>
+</div>
+
 </section>
 </main>
 
@@ -292,15 +444,28 @@ loginButton.addEventListener("click", async () => {
 });
 
 
+
 async function loadVideos() {
   const list = document.getElementById("videoList");
-  const player = document.getElementById("player");
+  const overlay = document.getElementById("videoOverlay");
+  const frameBox = document.getElementById("fullVideoFrame");
+  const closeButton = document.getElementById("closeVideo");
 
   list.replaceChildren();
+
   const loading = document.createElement("div");
   loading.className = "video-message";
-  loading.textContent = "Video များကို ရယူနေပါသည်...";
+  loading.textContent = "ရုပ်ရှင်များကို ရယူနေပါသည်...";
   list.appendChild(loading);
+
+  function closeVideo() {
+    overlay.classList.remove("open");
+    overlay.setAttribute("aria-hidden", "true");
+    frameBox.replaceChildren();
+    document.body.style.overflow = "";
+  }
+
+  closeButton.onclick = closeVideo;
 
   try {
     const params = new URLSearchParams({
@@ -341,13 +506,18 @@ async function loadVideos() {
       card.type = "button";
       card.className = "video-card";
 
+      const img = document.createElement("img");
+      img.alt = video.title || "Movie Poster";
+      img.loading = "lazy";
+
       if (video.cover_url) {
-        const img = document.createElement("img");
         img.src = video.cover_url;
-        img.alt = "";
-        img.loading = "lazy";
-        card.appendChild(img);
+      } else {
+        img.style.background = "#292d38";
+        img.style.aspectRatio = "2 / 3";
       }
+
+      card.appendChild(img);
 
       const info = document.createElement("div");
       info.className = "video-info";
@@ -360,7 +530,9 @@ async function loadVideos() {
       meta.className = "video-meta";
       meta.textContent =
         (video.category || "အထွေထွေ") +
-        (video.episode_number != null ? " · အပိုင်း " + video.episode_number : "");
+        (video.episode_number != null
+          ? " · အပိုင်း " + video.episode_number
+          : "");
 
       info.append(title, meta);
       card.appendChild(info);
@@ -370,6 +542,7 @@ async function loadVideos() {
 
         try {
           const url = new URL(embed);
+
           if (
             url.protocol !== "https:" ||
             !["ok.ru", "www.ok.ru"].includes(url.hostname) ||
@@ -385,7 +558,10 @@ async function loadVideos() {
           frame.allowFullscreen = true;
           frame.referrerPolicy = "strict-origin-when-cross-origin";
 
-          player.replaceChildren(frame);
+          frameBox.replaceChildren(frame);
+          overlay.classList.add("open");
+          overlay.setAttribute("aria-hidden", "false");
+          document.body.style.overflow = "hidden";
 
         } catch (error) {
           alert("ဒီ Video ရဲ့ OK.ru Embed Link မှားနေပါတယ်။");
@@ -404,6 +580,15 @@ async function loadVideos() {
     console.error("FIVE STAR TV Video Error:", error);
   }
 }
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    const overlay = document.getElementById("videoOverlay");
+    if (overlay && overlay.classList.contains("open")) {
+      document.getElementById("closeVideo").click();
+    }
+  }
+});
 
 verifyStoredSession();
 </script>
