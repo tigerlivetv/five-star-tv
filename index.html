@@ -369,6 +369,176 @@ input { background:#091218; border-color:#28505a; color:#f4ffff; }
   .video-card { padding:4px; }
 }
 
+
+/* FIVE STAR AD CAROUSEL */
+#adBanner {
+  flex: 0 0 auto;
+  width: 100%;
+  margin: 0 0 10px;
+}
+
+#adViewport {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 11px;
+  background: #101d24;
+  border: 1px solid #1b4149;
+  aspect-ratio: 16 / 6;
+  max-height: 145px;
+  touch-action: pan-y;
+}
+
+#adSlides {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform .35s ease;
+  will-change: transform;
+}
+
+.ad-slide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: #101d24;
+  display: block;
+  cursor: default;
+}
+
+.ad-slide.ad-clickable {
+  cursor: pointer;
+}
+
+.ad-slide img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#adDots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  min-height: 17px;
+  padding-top: 7px;
+}
+
+#adDots button {
+  width: 7px;
+  height: 7px;
+  min-width: 7px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #527078;
+}
+
+#adDots button.active {
+  width: 19px;
+  border-radius: 8px;
+  background: #28d5d8;
+}
+
+/* POSTER LIST ONLY SCROLLS */
+html, body {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  flex: 0 0 auto;
+}
+
+main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  margin: 0 auto;
+  padding: 10px 12px 0;
+}
+
+#viewerPanel {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding: 12px 10px 90px;
+  margin: 0;
+}
+
+#homePage {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#homePage > h2,
+#homePage > p {
+  flex: 0 0 auto;
+}
+
+#homePage > p {
+  margin-bottom: 12px;
+}
+
+#player {
+  display: none !important;
+}
+
+#videoList {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  align-content: start;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 13px 9px;
+  padding: 8px 0 24px;
+  margin-top: 0 !important;
+}
+
+#accountPage {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+footer {
+  display: none;
+}
+
+@media(max-width:360px) {
+  #viewerPanel {
+    padding-left: 7px;
+    padding-right: 7px;
+  }
+  #videoList {
+    gap: 9px 6px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -390,6 +560,12 @@ input { background:#091218; border-color:#28505a; color:#f4ffff; }
 <section id="homePage">
 <h2>FIVE STAR TV</h2>
 <p class="small">ကြိုက်နှစ်သက်ရာ ရုပ်ရှင်နှင့် ဇာတ်လမ်းတွဲများကို ကြည့်ရှုနိုင်ပါသည်။</p>
+<div id="adBanner" hidden>
+  <div id="adViewport">
+    <div id="adSlides"></div>
+  </div>
+  <div id="adDots" aria-label="ကြော်ငြာပုံ ရွေးချယ်ရန်"></div>
+</div>
 <div id="player">ဗီဒီယိုကို ရွေးချယ်ပါ</div>
 <div id="videoList" style="margin-top:16px"></div>
 </section>
@@ -482,6 +658,7 @@ function showMember(data) {
   viewerPanel.hidden = false;
   switchPage("home");
   loadVideos();
+  loadAdvertisements();
 }
 
 async function verifyStoredSession() {
@@ -692,6 +869,194 @@ async function loadVideos() {
     console.error("FIVE STAR TV Video Error:", error);
   }
 }
+
+
+// FIVE_STAR_AD_CAROUSEL
+let advertisementTimer = null;
+let currentAdvertisementIndex = 0;
+let advertisementItems = [];
+
+function showAdvertisement(index) {
+  const slides = document.getElementById("adSlides");
+  const dots = document.getElementById("adDots");
+
+  if (!slides || !dots || advertisementItems.length === 0) return;
+
+  currentAdvertisementIndex =
+    (index + advertisementItems.length) % advertisementItems.length;
+
+  slides.style.transform =
+    "translateX(-" + (currentAdvertisementIndex * 100) + "%)";
+
+  dots.querySelectorAll("button").forEach((dot, i) => {
+    dot.classList.toggle("active", i === currentAdvertisementIndex);
+    dot.setAttribute("aria-current",
+      i === currentAdvertisementIndex ? "true" : "false");
+  });
+}
+
+async function loadAdvertisements() {
+  const banner = document.getElementById("adBanner");
+  const viewport = document.getElementById("adViewport");
+  const slides = document.getElementById("adSlides");
+  const dots = document.getElementById("adDots");
+
+  if (!banner || !viewport || !slides || !dots) return;
+
+  if (advertisementTimer) {
+    clearInterval(advertisementTimer);
+    advertisementTimer = null;
+  }
+
+  banner.hidden = true;
+  slides.replaceChildren();
+  dots.replaceChildren();
+  advertisementItems = [];
+  currentAdvertisementIndex = 0;
+
+  try {
+    const params = new URLSearchParams({
+      select: "id,title,image_url,target_url",
+      is_active: "eq.true",
+      order: "sort_order.asc,created_at.desc"
+    });
+
+    const response = await fetch(
+      SUPABASE_URL + "/rest/v1/advertisements?" + params.toString(),
+      {
+        method: "GET",
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Authorization": "Bearer " + SUPABASE_KEY
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Advertisement HTTP " + response.status);
+    }
+
+    const ads = await response.json();
+
+    if (!Array.isArray(ads)) return;
+
+    advertisementItems = ads.filter(ad => {
+      if (!ad || typeof ad.image_url !== "string") return false;
+      try {
+        return new URL(ad.image_url).protocol === "https:";
+      } catch (_) {
+        return false;
+      }
+    });
+
+    if (advertisementItems.length === 0) return;
+
+    advertisementItems.forEach((ad, index) => {
+      const slide = document.createElement("div");
+      slide.className = "ad-slide";
+
+      const img = document.createElement("img");
+      img.src = ad.image_url;
+      img.alt = ad.title || "FIVE STAR TV Advertisement";
+      img.loading = index === 0 ? "eager" : "lazy";
+      img.decoding = "async";
+      img.referrerPolicy = "no-referrer";
+
+      slide.appendChild(img);
+
+      const target = String(ad.target_url || "").trim();
+
+      if (target) {
+        let safeTarget = "";
+
+        try {
+          if (target.startsWith("/") && !target.startsWith("//")) {
+            safeTarget = new URL(target, window.location.origin).href;
+          } else {
+            const parsed = new URL(target);
+            if (parsed.protocol === "https:") {
+              safeTarget = parsed.href;
+            }
+          }
+        } catch (_) {
+          safeTarget = "";
+        }
+
+        if (safeTarget) {
+          slide.classList.add("ad-clickable");
+          slide.setAttribute("role", "link");
+          slide.setAttribute("tabindex", "0");
+          slide.setAttribute("aria-label",
+            ad.title || "ကြော်ငြာကို ဖွင့်ရန်");
+
+          const openTarget = () => {
+            const url = new URL(safeTarget);
+            if (url.origin === window.location.origin) {
+              window.location.href = url.href;
+            } else {
+              window.open(url.href, "_blank", "noopener,noreferrer");
+            }
+          };
+
+          slide.addEventListener("click", openTarget);
+          slide.addEventListener("keydown", event => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              openTarget();
+            }
+          });
+        }
+      }
+
+      slides.appendChild(slide);
+
+      const dot = document.createElement("button");
+      dot.type = "button";
+      dot.setAttribute("aria-label", "ကြော်ငြာ " + (index + 1));
+      dot.addEventListener("click", () => showAdvertisement(index));
+      dots.appendChild(dot);
+    });
+
+    banner.hidden = false;
+    showAdvertisement(0);
+
+    if (advertisementItems.length > 1) {
+      advertisementTimer = setInterval(() => {
+        showAdvertisement(currentAdvertisementIndex + 1);
+      }, 5000);
+    }
+
+  } catch (error) {
+    banner.hidden = true;
+    console.error("FIVE STAR TV Advertisement Error:", error);
+  }
+}
+
+// ဖုန်းဖြင့် ဘယ်ညာ ပွတ်ရွှေ့နိုင်ရန်
+(() => {
+  const viewport = document.getElementById("adViewport");
+  if (!viewport) return;
+
+  let startX = 0;
+  let startY = 0;
+
+  viewport.addEventListener("touchstart", event => {
+    if (!event.touches || !event.touches.length) return;
+    startX = event.touches[0].clientX;
+    startY = event.touches[0].clientY;
+  }, { passive: true });
+
+  viewport.addEventListener("touchend", event => {
+    if (!event.changedTouches || !event.changedTouches.length) return;
+
+    const dx = event.changedTouches[0].clientX - startX;
+    const dy = event.changedTouches[0].clientY - startY;
+
+    if (Math.abs(dx) > 35 && Math.abs(dx) > Math.abs(dy)) {
+      showAdvertisement(currentAdvertisementIndex + (dx < 0 ? 1 : -1));
+    }
+  }, { passive: true });
+})();
 
 document.addEventListener("keydown", event => {
   if (event.key === "Escape") {
