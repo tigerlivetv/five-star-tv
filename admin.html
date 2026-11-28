@@ -85,7 +85,11 @@ textarea{width:100%;padding:13px;border:1px solid #ccd8e8;border-radius:9px;font
 <label>အပိုင်းနံပါတ်</label>
 <input id="videoEpisode" type="number" min="1" placeholder="1">
 
-<label>Cover Image URL</label>
+<label>Cover ပုံ (Gallery မှ ရွေးရန်)</label>
+<input id="videoCoverFile" type="file" accept="image/jpeg,image/png,image/webp">
+<button id="uploadCoverBtn" type="button" class="secondary">ပုံ Upload တင်မည်</button>
+<div class="small">JPG / PNG / WEBP — 5MB အထိ</div>
+<label>Cover Image URL (အလိုအလျောက် ဖြည့်ပေးမည်)</label>
 <input id="videoCover" type="url" placeholder="https://...">
 
 <label>OK.ru Embed URL</label>
@@ -238,6 +242,48 @@ async function callVideoApi(payload){
     throw new Error(d.message||d.error||"Video လုပ်ဆောင်မှု မအောင်မြင်ပါ။");
   return d;
 }
+
+$("uploadCoverBtn").onclick=async()=>{
+  const btn=$("uploadCoverBtn");
+  const file=$("videoCoverFile").files[0];
+
+  if(!file){
+    videoStatus("Gallery မှ ပုံတစ်ပုံ အရင်ရွေးပါ။");
+    return;
+  }
+
+  btn.disabled=true;
+  videoStatus("ပုံ Upload တင်နေပါသည်။");
+
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session) throw new Error("Admin Login ပြန်ဝင်ပါ။");
+
+    const form=new FormData();
+    form.append("file",file);
+
+    const r=await fetch(videoFn,{
+      method:"POST",
+      headers:{
+        "apikey":"sb_publishable_HdpdY2jPa_-Q1eDUq407JQ_HI7eC9qC",
+        "Authorization":"Bearer "+session.access_token
+      },
+      body:form
+    });
+
+    const d=await r.json();
+    if(!r.ok || d.success===false)
+      throw new Error(d.error||"ပုံ Upload မအောင်မြင်ပါ။");
+
+    $("videoCover").value=d.cover_url;
+    $("videoCoverFile").value="";
+    videoStatus("ပုံ Upload အောင်မြင်ပါပြီ။ Video သိမ်းနိုင်ပါပြီ။");
+  }catch(err){
+    videoStatus(err.message);
+  }finally{
+    btn.disabled=false;
+  }
+};
 
 function videoStatus(message){
   $("videoStatus").textContent=message;
