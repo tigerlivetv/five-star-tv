@@ -35,6 +35,16 @@ button:disabled{opacity:.6}
 .detail span{color:#aaa6a0}
 .detail strong{text-align:right;color:#f4e6c6}
 footer{text-align:center;color:#77716a;font-size:12px;padding:22px}
+
+#player{overflow:hidden}
+#player iframe{width:100%;height:100%;min-height:200px;border:0;border-radius:12px}
+.video-card{display:flex;gap:12px;align-items:center;width:100%;padding:10px;border:1px solid #39343a;border-radius:12px;background:#1c1e27;color:#f4e6c6;text-align:left}
+.video-card img{width:112px;height:70px;object-fit:cover;border-radius:8px;background:#111}
+.video-card .video-info{flex:1;min-width:0}
+.video-card .video-title{font-weight:bold;font-size:14px}
+.video-card .video-meta{font-size:12px;color:#aaa6a0;margin-top:6px}
+.video-message{padding:14px;color:#aaa6a0;text-align:center;font-size:13px}
+
 </style>
 </head>
 <body>
@@ -126,6 +136,7 @@ function showMember(data) {
   loginPanel.hidden = true;
   viewerPanel.hidden = false;
   switchPage("home");
+  loadVideos();
 }
 
 async function verifyStoredSession() {
@@ -197,6 +208,120 @@ loginButton.addEventListener("click", async () => {
     loginButton.disabled = false;
   }
 });
+
+
+async function loadVideos() {
+  const list = document.getElementById("videoList");
+  const player = document.getElementById("player");
+
+  list.replaceChildren();
+  const loading = document.createElement("div");
+  loading.className = "video-message";
+  loading.textContent = "Video များကို ရယူနေပါသည်...";
+  list.appendChild(loading);
+
+  try {
+    const params = new URLSearchParams({
+      select: "id,title,episode_number,category,description,sort_order,cover_url,ok_embed_url",
+      is_active: "eq.true",
+      is_published: "eq.true",
+      order: "sort_order.asc,created_at.desc"
+    });
+
+    const response = await fetch(
+      SUPABASE_URL + "/rest/v1/videos?" + params.toString(),
+      {
+        method: "GET",
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Authorization": "Bearer " + SUPABASE_KEY
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Server မှ Video မရပါ။ HTTP " + response.status);
+    }
+
+    const videos = await response.json();
+    list.replaceChildren();
+
+    if (!Array.isArray(videos) || videos.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "video-message";
+      empty.textContent = "လောလောဆယ် ကြည့်ရှုနိုင်သော Video မရှိသေးပါ။";
+      list.appendChild(empty);
+      return;
+    }
+
+    videos.forEach(video => {
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "video-card";
+
+      if (video.cover_url) {
+        const img = document.createElement("img");
+        img.src = video.cover_url;
+        img.alt = "";
+        img.loading = "lazy";
+        card.appendChild(img);
+      }
+
+      const info = document.createElement("div");
+      info.className = "video-info";
+
+      const title = document.createElement("div");
+      title.className = "video-title";
+      title.textContent = video.title || "Untitled Video";
+
+      const meta = document.createElement("div");
+      meta.className = "video-meta";
+      meta.textContent =
+        (video.category || "အထွေထွေ") +
+        (video.episode_number != null ? " · အပိုင်း " + video.episode_number : "");
+
+      info.append(title, meta);
+      card.appendChild(info);
+
+      card.addEventListener("click", () => {
+        const embed = String(video.ok_embed_url || "");
+
+        try {
+          const url = new URL(embed);
+          if (
+            url.protocol !== "https:" ||
+            !["ok.ru", "www.ok.ru"].includes(url.hostname) ||
+            !/^\/videoembed\/[0-9]+\/?$/.test(url.pathname)
+          ) {
+            throw new Error("Invalid embed URL");
+          }
+
+          const frame = document.createElement("iframe");
+          frame.src = url.href;
+          frame.title = video.title || "FIVE STAR TV Video";
+          frame.allow = "autoplay; fullscreen; picture-in-picture";
+          frame.allowFullscreen = true;
+          frame.referrerPolicy = "strict-origin-when-cross-origin";
+
+          player.replaceChildren(frame);
+          player.scrollIntoView({ behavior: "smooth", block: "start" });
+        } catch (error) {
+          alert("ဒီ Video ရဲ့ OK.ru Embed Link မှားနေပါတယ်။");
+        }
+      });
+
+      list.appendChild(card);
+    });
+
+  } catch (error) {
+    list.replaceChildren();
+    const msg = document.createElement("div");
+    msg.className = "video-message";
+    msg.textContent = "Video မရယူနိုင်ပါ။ အင်တာနက်နှင့် Server ချိတ်ဆက်မှုကို စစ်ဆေးပါ။";
+    list.appendChild(msg);
+    console.error("FIVE STAR TV Video Error:", error);
+  }
+}
 
 verifyStoredSession();
 </script>
