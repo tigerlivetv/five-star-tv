@@ -36,8 +36,8 @@ button:disabled{opacity:.6}
 .detail strong{text-align:right;color:#f4e6c6}
 footer{text-align:center;color:#77716a;font-size:12px;padding:22px}
 
-#player{overflow:hidden}
-#player iframe{width:100%;height:100%;min-height:200px;border:0;border-radius:12px}
+#player{overflow:hidden;width:100%;aspect-ratio:16/9;min-height:0;padding:0;border-radius:10px;background:#000}
+#player iframe{display:block;width:100%;height:100%;min-height:0;aspect-ratio:16/9;border:0;border-radius:10px;background:#000}
 .video-card{display:flex;gap:12px;align-items:center;width:100%;padding:10px;border:1px solid #39343a;border-radius:12px;background:#1c1e27;color:#f4e6c6;text-align:left}
 .video-card img{width:112px;height:70px;object-fit:cover;border-radius:8px;background:#111}
 .video-card .video-info{flex:1;min-width:0}
