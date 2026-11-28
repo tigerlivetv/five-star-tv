@@ -613,7 +613,7 @@ $("saveAdBtn").onclick=async()=>{
     const target_url=$("adTargetUrl").value.trim();
     if(!title) throw new Error("ကြော်ငြာခေါင်းစဉ် ထည့်ပါ။");
     if(!image_url) throw new Error("ကြော်ငြာပုံ Upload အရင်တင်ပါ။");
-    if(!target_url) throw new Error("သွားမည့် Link ထည့်ပါ။");
+    // Link မထည့်လည်း ကြော်ငြာသိမ်းနိုင်သည်။
     const payload={
       title,image_url,target_url,
       sort_order:Number($("adOrder").value||0),
